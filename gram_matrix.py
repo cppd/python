@@ -13,7 +13,7 @@ import sys
 import unittest
 import numpy as np
 
-if sys.version_info[0:2] < (3, 6):
+if sys.version_info < (3, 6):
         sys.exit("Python >= 3.6 is required.")
 
 INTEGER_TYPE = np.int64

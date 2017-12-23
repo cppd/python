@@ -24,19 +24,19 @@
 #    Уравнение 1.1 — целочисленное деление на 2, также возможно целочисленное переполнение.
 #    Уравнение 1.2 — целочисленное деление на 2, также возможно целочисленное переполнение.
 #    Уравнение 1.3 — возможно целочисленное переполнение.
-#    Уравнение 1.4 — всё в порядке с целыми числами.
+#    Уравнение 1.4 — всё в порядке с целыми числами, если они неотрицательные.
 #  2.
 #    Y(l) == Y(r) с равенством как описано выше.
 #
 
 import sys
+import operator
 import matplotlib.pyplot as plt
-from operator import itemgetter
 
-if sys.version_info[0] < 3:
-        sys.exit("Python >= 3 is required.")
+if sys.version_info < (3, 6):
+        sys.exit("Python >= 3.6 is required.")
 
-def annotate(plt, x, y, count):
+def annotate(x, y, count):
         plt.annotate("{0} points".format(count), xy = (x, y), xytext = (15, 15),
                      textcoords = 'offset points', ha = 'left', va = 'center',
                      bbox = dict(boxstyle = 'round', alpha = 0.2),
@@ -71,10 +71,9 @@ def show_points(points, window_title, title):
                 increase_y = 0.1 * (max_x - min_x)
                 # Если тут increase_y == 0, то тогда пусть будет 0
 
-        for key in count_xy.keys():
-                count = count_xy[key]
+        for key, count in count_xy.items():
                 if count > 1:
-                        annotate(plt, key[0], key[1], count)
+                        annotate(key[0], key[1], count)
 
         plt.gcf().canvas.set_window_title(window_title)
         plt.title(title)
@@ -92,7 +91,7 @@ def symmetrical(points, use_unique_points):
                         data[x].append(y)
                 else:
                         data[x] = [y]
-        data = sorted(data.items(), key = itemgetter(0))
+        data = sorted(data.items(), key = operator.itemgetter(0))
 
         assert len(data) > 0
         assert all(isinstance(x, int) for x, y in data)

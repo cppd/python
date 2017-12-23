@@ -12,7 +12,7 @@ import statistics
 import numpy as np
 import matplotlib.pyplot as plt
 
-if sys.version_info[0:2] < (3, 6):
+if sys.version_info < (3, 6):
         sys.exit("Python >= 3.6 is required.")
 
 class ObjSamplesException(Exception):
@@ -98,14 +98,19 @@ class Triangle:
 
         def __init__(self, indices):
 
-                assert len(indices) == 3
+                self.__indices = indices
 
-                self.__indices = []
-                self.__indices.extend(indices)
+                assert len(self.__indices) == 3
+                assert all(isinstance(index, int) for index in self.__indices)
 
         def sample(self, vertices):
 
-                return triangle_sample(*vertices[self.__indices])
+                # Так работает быстрее, чем v0, v1, v2 = vertices[self.__indices]
+                v0 = vertices[self.__indices[0]]
+                v1 = vertices[self.__indices[1]]
+                v2 = vertices[self.__indices[2]]
+
+                return triangle_sample(v0, v1, v2)
 
         def area(self, vertices):
 
@@ -122,8 +127,11 @@ class Triangle:
 class ObjFile:
 
         @staticmethod
-        def __SAMPLE_FORMAT_STRING():
-                return "{:9.6f} {:9.6f} {:9.6f}"
+        def __sample_to_string(sample):
+
+                assert len(sample) == 3
+
+                return "{:9.6f} {:9.6f} {:9.6f}".format(*sample)
 
         # Строка int/int/int.
         # Нужно получить первое значение.
@@ -180,7 +188,7 @@ class ObjFile:
                 return [ObjFile.__parse_vertex_number(data[i]) for i in range(0, 3)]
 
         @staticmethod
-        def __correct_face_indices(indices, vertex_count):
+        def __correct_face_indices(vertex_count, indices):
 
                 assert len(indices) == 3
 
@@ -202,8 +210,6 @@ class ObjFile:
                                 index = vertex_count + index
 
                         indices[i] = index
-
-                return indices
 
         # Сместить к началу координат в интервал от 0 до 1
         def __scale_vertices(self):
@@ -241,11 +247,11 @@ class ObjFile:
 
                 assert len(self.__triangles) == len(self.__area)
 
-        def __triangle_sample(self, index):
+        def __triangle_sample_string(self, index):
 
                 sample = self.__triangles[index].sample(self.__vertices)
 
-                return self.__SAMPLE_FORMAT_STRING().format(*sample)
+                return self.__sample_to_string(sample)
 
         def __init__(self, file_name):
 
@@ -277,7 +283,7 @@ class ObjFile:
 
                                 indices = self.__parse_face(second)
 
-                                indices = self.__correct_face_indices(indices, len(self.__vertices))
+                                self.__correct_face_indices(len(self.__vertices), indices)
 
                                 self.__triangles.append(Triangle(indices))
 
@@ -326,7 +332,7 @@ class ObjFile:
                                 count = math.ceil(sample_density * self.__area[i])
 
                                 for _ in range(0, count):
-                                        print(self.__triangle_sample(i), file = f)
+                                        print(self.__triangle_sample_string(i), file = f)
 
                                 all_sample_count += count
 

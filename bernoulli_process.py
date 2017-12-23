@@ -9,33 +9,35 @@ import sys
 import decimal
 from decimal import Decimal
 
-if sys.version_info[0:2] < (3, 6):
+if sys.version_info < (3, 6):
         sys.exit("Python >= 3.6 is required.")
 
 class BernoulliProcessException(Exception):
         pass
 
+def error(message):
+        raise BernoulliProcessException(message)
+
 class BernoulliProcess:
 
-        __cache = [Decimal(1), Decimal(1)]
+        def __init__(self):
+                self.__cache = [Decimal(1), Decimal(1)]
 
-        def __error(self, message):
-                raise BernoulliProcessException(message)
-
-        def max_factorial_argument(self):
+        @staticmethod
+        def max_factorial_argument():
                 return 100000
 
         def factorial(self, n):
 
                 if not n >= 0:
-                        self.__error("Error factorial argument {0}".format(n))
+                        error("Error factorial argument {0}".format(n))
 
                 if n < len(self.__cache):
                         return self.__cache[n]
 
                 if n > self.max_factorial_argument():
-                        self.__error("Factorial argument {0} is too large (max = {1})"
-                                     .format(n, self.max_factorial_argument()))
+                        error("Factorial argument {0} is too large (max = {1})"
+                              .format(n, self.max_factorial_argument()))
 
                 for i in range(len(self.__cache), n + 1):
                         self.__cache.append(Decimal(i) * self.__cache[i - 1])
@@ -45,7 +47,7 @@ class BernoulliProcess:
         def binomial(self, n, m):
 
                 if not (m <= n and n >= 1 and m >= 0):
-                        self.__error("Error binomial ({0}, {1})".format(n, m))
+                        error("Error binomial ({0}, {1})".format(n, m))
 
                 return self.factorial(n) / (self.factorial(m) * self.factorial(n - m))
 
@@ -54,7 +56,7 @@ class BernoulliProcess:
         def probability(self, n, m, p):
 
                 if not (p > 0 and p < 1):
-                        self.__error("Error probability {0}".format(p))
+                        error("Error probability {0}".format(p))
 
                 return self.binomial(n, m) * (Decimal(p) ** (m)) * (Decimal(1 - p) ** (n - m))
 
@@ -130,11 +132,11 @@ class BernoulliProcess:
         def find(self, m, p, success_probability):
 
                 if not (success_probability > 0 and success_probability < 1):
-                        self.__error("Success probability {0} is out of range (0, 1)".format(success_probability))
+                        error("Success probability {0} is out of range (0, 1)".format(success_probability))
                 if not isinstance(m, int):
-                        self.__error("Trial count {0} is not integer".format(m))
+                        error("Trial count {0} is not integer".format(m))
                 if not m > 0:
-                        self.__error("Trial count {0} must be positive".format(m))
+                        error("Trial count {0} must be positive".format(m))
 
                 # Имеется только одно решение, поэтому его можно найти двоичным поиском
                 trial_count = self.__binary_search(m, p, success_probability)

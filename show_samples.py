@@ -10,16 +10,16 @@
 #  (x, y)
 
 import sys
-from ast import literal_eval
-from math import sqrt
+import ast
+import math
 import matplotlib.pyplot as plt
 
 STRATIFIED_JITTERED_SAMPLER = "Stratified Jittered Sampler"
 LATIN_HYPERCUBE_SAMPLER = "Latin Hypercube Sampler"
 PASS_COUNT_STRING = "Pass count:"
 
-if sys.version_info[0] < 3:
-        sys.exit("Python >= 3 is required.")
+if sys.version_info < (3, 6):
+        sys.exit("Python >= 3.6 is required.")
 
 def error(message):
         sys.exit(message)
@@ -75,7 +75,7 @@ def parse_pass_count(text, keyword):
         text = text[word_begin + len(keyword):].strip()
 
         try:
-                pass_count = literal_eval(text)
+                pass_count = ast.literal_eval(text)
         except ValueError:
                 error("Malformed \"{0}\" input:\n{1}".format(keyword, text))
 
@@ -98,7 +98,7 @@ def parse_sampler_point(text):
         text = text[point_begin : point_end + 1]
 
         try:
-                point = literal_eval(text)
+                point = ast.literal_eval(text)
         except ValueError:
                 error("Malformed input:\n{0}".format(text))
 
@@ -124,7 +124,7 @@ def compute_grid_size(sampler_type, point_count, pass_count):
                 error("Sample group size is not integer:\n{0}".format(samples_group_size))
 
         if sampler_type == STRATIFIED_JITTERED_SAMPLER:
-                one_dimension_size = sqrt(samples_group_size)
+                one_dimension_size = math.sqrt(samples_group_size)
                 if not one_dimension_size.is_integer():
                         error("Stratified Jittered Sampler point count must be a square:\n{0}"\
                               .format(samples_group_size))
