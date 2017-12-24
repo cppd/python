@@ -133,6 +133,6 @@ def symmetrical_points(points, use_unique_points):
 
         show_points(points, "Points", title)
 
-#
+if __name__ == "__main__":
 
-symmetrical_points([(1, 2), (2, 5), (3, 5), (3, 5), (4, 2)], use_unique_points = True)
+        symmetrical_points([(1, 2), (2, 5), (3, 5), (3, 5), (4, 2)], use_unique_points = True)

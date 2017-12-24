@@ -174,9 +174,14 @@ def read_file(file_name):
 
         return (sampler_type, grid_size, points)
 
-#
+if __name__ == "__main__":
 
-if len(sys.argv) != 2:
-        error("No file name in the command line")
+        try:
+                if len(sys.argv) != 2:
+                        error("No file name in the command line")
 
-show_points(*read_file(sys.argv[1]), "Sampler points")
+                show_points(*read_file(sys.argv[1]), "Sampler points")
+
+        except Exception as e:
+
+                sys.exit("{0}".format(e))
