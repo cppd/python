@@ -11,8 +11,8 @@
 
 import sys
 import ast
-import math
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 STRATIFIED_JITTERED_SAMPLER = "Stratified Jittered Sampler"
 LATIN_HYPERCUBE_SAMPLER = "Latin Hypercube Sampler"
@@ -25,17 +25,14 @@ def error(message):
         sys.exit(message)
 
 def draw_line(point_from, point_to):
+        assert len(point_from) == 2 and len(point_to) == 2
+
         plt.plot([point_from[0], point_to[0]], [point_from[1], point_to[1]],
                  color = 'gray', linestyle = 'solid', linewidth = 0.5)
 
-def draw_points(points):
-        plt.scatter(*zip(*points), color = 'green', s = 4)
+def show_points_2d(title, grid_size, points, window_title):
 
-# points — это как бы std::vector<std::array<int, 2>>
-def show_points(title, grid_size, points, window_title):
-
-        if len(points) == 0:
-                error('No points to show')
+        assert len(points) > 0 and len(points[0]) == 2
 
         for x in range(0, grid_size + 1):
                 draw_line((x / grid_size, 0), (x / grid_size, 1))
@@ -43,12 +40,38 @@ def show_points(title, grid_size, points, window_title):
         for y in range(0, grid_size + 1):
                 draw_line((0, y / grid_size), (1, y / grid_size))
 
-        draw_points(points)
+        plt.scatter(*zip(*points), color = 'green', s = 4)
 
         plt.axes().set_aspect('equal')
         plt.gcf().canvas.set_window_title(window_title)
         plt.title(title)
         plt.show()
+
+def show_points_3d(title, points, window_title):
+
+        assert len(points) > 0 and len(points[0]) == 3
+
+        #fig = plt.figure()
+        #ax = fig.add_subplot(111, projection='3d')
+        ax = Axes3D(plt.figure())
+
+        ax.scatter(*zip(*points), c = 'green', marker = '.')
+
+        plt.gcf().canvas.set_window_title(window_title)
+        plt.title(title)
+        plt.show()
+
+def show_points(title, grid_size, points, window_title):
+
+        if len(points) == 0:
+                error('No points to show')
+
+        if len(points[0]) == 2:
+                show_points_2d(title, grid_size, points, window_title)
+        elif len(points[0]) == 3:
+                show_points_3d(title, points, window_title)
+        else:
+                error('Point dimension {0} is not supported'.format(len(points[0])))
 
 # Поиск типа семплера в строке "*Sampler name"
 def parse_sampler_type(text, samplers):
@@ -104,33 +127,39 @@ def parse_sampler_point(text):
 
         if not isinstance(point, tuple):
                 error("Not tuple input:\n{0}".format(text))
-        if len(point) != 2:
-                error("Not 2D point input:\n{0}".format(text))
-        if not isinstance(point[0], (int, float)):
-                error("Not 2D point input:\n{0}".format(text))
-        if not isinstance(point[1], (int, float)):
-                error("Not 2D point input:\n{0}".format(text))
-        if not (point[0] >= 0 and point[0] <= 1 and point[1] >= 0 and point[1] <= 1):
-                error("Point coordinates out of [0, 1]:\n{0}".format(text))
+
+        for i in range(0, len(point)):
+                if not isinstance(point[i], (int, float)):
+                        error("Not point input:\n{0}".format(text))
+                if not (point[i] >= 0 and point[i] <= 1):
+                        error("Point coordinates out of [0, 1]:\n{0}".format(text))
 
         return point
 
 # Количество делений квадрата по одному измерению в зависимости от типа семплера
-def compute_grid_size(sampler_type, point_count, pass_count):
+def compute_grid_size(sampler_type, point_count, pass_count, dimension):
 
         samples_group_size = point_count / pass_count
 
         if not samples_group_size.is_integer():
                 error("Sample group size is not integer:\n{0}".format(samples_group_size))
 
+        samples_group_size = int(samples_group_size)
+
         if sampler_type == STRATIFIED_JITTERED_SAMPLER:
-                one_dimension_size = math.sqrt(samples_group_size)
-                if not one_dimension_size.is_integer():
-                        error("Stratified Jittered Sampler point count must be a square:\n{0}"\
-                              .format(samples_group_size))
+
+                one_dimension_size = round(pow(samples_group_size, 1 / dimension))
+
+                if pow(one_dimension_size, dimension) != samples_group_size:
+                        error("Stratified Jittered Sampler point count ({0}) must be the {1} power of an integer"\
+                              .format(samples_group_size, dimension))
+
                 grid_size = one_dimension_size
+
         elif sampler_type == LATIN_HYPERCUBE_SAMPLER:
+
                 grid_size = samples_group_size
+
         else:
                 error("Error sampler type \"{0}\"".format(sampler_type))
 
@@ -145,9 +174,11 @@ def read_file(file_name):
         sampler_type = ""
         pass_count = -1
         grid_size = -1
-        points = []
+        point_list = []
 
         line_num = 0
+
+        dimension = -1
 
         for line in open(file_name):
 
@@ -161,18 +192,28 @@ def read_file(file_name):
                 elif line_num == 1:
                         pass_count = parse_pass_count(line, PASS_COUNT_STRING)
                 else:
-                        points.append(parse_sampler_point(line))
+                        point = parse_sampler_point(line)
+
+                        if dimension > 0:
+                                if len(point) != dimension:
+                                        error("Inconsistent point dimensions {0} and {1}".format(dimension, len(point)))
+                        else:
+                                dimension = len(point)
+
+                        point_list.append(point)
 
                 line_num += 1
 
         if sampler_type == "":
                 error("No sampler type")
-        if len(points) < 1:
+        if len(point_list) < 1:
                 error("No points")
+        if dimension < 1:
+                error("No dimension")
 
-        grid_size = compute_grid_size(sampler_type, len(points), pass_count)
+        grid_size = compute_grid_size(sampler_type, len(point_list), pass_count, dimension)
 
-        return (sampler_type, grid_size, points)
+        return (sampler_type, grid_size, point_list)
 
 if __name__ == "__main__":
 
