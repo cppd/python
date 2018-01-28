@@ -4,15 +4,18 @@
 # Формат данных:
 #  Stratified Jittered Sampler | Latin Hypercube Sampler
 #  Pass count: number
-#  (x, y)
-#  (x, y)
+#  (x, y) | (x, y, z)
 #  ...
-#  (x, y)
+#  (x, y) | (x, y, z)
 
 import sys
 import ast
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+
 
 STRATIFIED_JITTERED_SAMPLER = "Stratified Jittered Sampler"
 LATIN_HYPERCUBE_SAMPLER = "Latin Hypercube Sampler"
@@ -21,8 +24,11 @@ PASS_COUNT_STRING = "Pass count:"
 if sys.version_info < (3, 6):
         sys.exit("Python >= 3.6 is required.")
 
+class ShowSamplesException(Exception):
+        pass
+
 def error(message):
-        sys.exit(message)
+        raise ShowSamplesException(message)
 
 def draw_line(point_from, point_to):
         assert len(point_from) == 2 and len(point_to) == 2
@@ -128,10 +134,10 @@ def parse_sampler_point(text):
         if not isinstance(point, tuple):
                 error("Not tuple input:\n{0}".format(text))
 
-        for i in range(0, len(point)):
-                if not isinstance(point[i], (int, float)):
+        for coordinate in point:
+                if not isinstance(coordinate, (int, float)):
                         error("Not point input:\n{0}".format(text))
-                if not (point[i] >= 0 and point[i] <= 1):
+                if not (coordinate >= 0 and coordinate <= 1):
                         error("Point coordinates out of [0, 1]:\n{0}".format(text))
 
         return point
@@ -215,13 +221,36 @@ def read_file(file_name):
 
         return (sampler_type, grid_size, point_list)
 
+def dialog():
+
+        try:
+
+                top = tk.Tk()
+                top.withdraw()
+                open_file_name = tk.filedialog.askopenfilename(filetypes = [("Sample files","*.txt")])
+                top.destroy()
+
+                if len(open_file_name) == 0:
+                        return
+
+                show_points(*read_file(open_file_name), "Sampler points")
+
+        except Exception as e:
+
+                top = tk.Tk()
+                top.withdraw()
+                tk.messagebox.showerror("Error", "{0}".format(e))
+                top.destroy()
+                raise
+
 if __name__ == "__main__":
 
         try:
-                if len(sys.argv) != 2:
-                        error("No file name in the command line")
 
-                show_points(*read_file(sys.argv[1]), "Sampler points")
+                if len(sys.argv) == 2:
+                        show_points(*read_file(sys.argv[1]), "Sampler points")
+                else:
+                        dialog()
 
         except Exception as e:
 
