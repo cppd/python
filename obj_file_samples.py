@@ -9,8 +9,12 @@ import sys
 import os
 import math
 import statistics
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 if sys.version_info < (3, 6):
         sys.exit("Python >= 3.6 is required.")
@@ -342,6 +346,8 @@ class ObjFile:
 
                 print("\nsample count {0} ({1})".format(all_sample_count, sample_count))
 
+                return all_sample_count
+
 def test_triangle_samples(point_count):
 
         # 3 вершины по 2 координаты в каждой
@@ -386,15 +392,127 @@ def sample_obj_file(obj_file, sample_file, sample_count):
 
         file.print_statictics()
 
-        file.write_samples_to_file(sample_file, sample_count)
+        all_sample_count = file.write_samples_to_file(sample_file, sample_count)
+
+        return all_sample_count
+
+class Window():
+
+        def open_button(self):
+
+                name = tk.filedialog.askopenfilename(filetypes = [("OBJ files","*.obj")])
+
+                if len(name) == 0:
+                        return
+
+                self.filename_open.set(name)
+
+                file_name, _ = os.path.splitext(name)
+                file_name_save = file_name + "_samples.txt"
+                if not os.path.exists(file_name_save):
+                        self.filename_save.set(file_name_save)
+                else:
+                        if tk.messagebox.askyesno("File exists",
+                                                  "File for OBJ samples '" +
+                                                  file_name_save +
+                                                  "' already exists.\n" +
+                                                  "Do you want to overwrite it?"):
+                                self.filename_save.set(file_name_save)
+                        else:
+                                self.filename_save.set("")
+
+        def save_button(self):
+
+                name = tk.filedialog.asksaveasfilename(defaultextension = ".txt",
+                                                       filetypes = [("Sample files","*.txt")])
+
+                if len(name) > 0:
+                        self.filename_save.set(name)
+
+        def run_button(self):
+
+                if len(self.filename_open.get().strip()) == 0:
+                        tk.messagebox.showerror("Error", "Empty OBJ file name")
+                        return
+
+                if len(self.filename_save.get().strip()) == 0:
+                        tk.messagebox.showerror("Error", "Empty sample file name")
+                        return
+
+                point_count = self.point_count.get().strip()
+                if len(point_count) == 0:
+                        tk.messagebox.showerror("Error", "Empty point count")
+                        return
+                try:
+                        point_count = parse_integer(point_count)
+                except Exception as e:
+                        tk.messagebox.showerror("Error", "{0}".format(e))
+                        return
+                if point_count <= 0:
+                        tk.messagebox.showerror("Error", "Point count must be positive")
+                        return
+
+                self.compute(self.filename_open.get(), self.filename_save.get(), point_count)
+
+        @staticmethod
+        def compute(file_open, file_save, point_count):
+
+                try:
+                        all_point_count = sample_obj_file(file_open, file_save, point_count)
+                except Exception as e:
+                        tk.messagebox.showerror("Error", "{0}".format(e))
+                        return
+
+                tk.messagebox.showinfo("Information", "{0} samples generated".format(all_point_count))
+
+        def __init__(self):
+
+                self.top = tk.Tk()
+                self.top.title("OBJ file samples")
+
+                self.top.resizable(width=True, height=False)
+                self.top.minsize(width=700, height=0)
+
+                frame = tk.Frame(self.top, padx=5, pady=5)
+                frame.pack(fill=tk.BOTH, expand=tk.YES)
+
+                tk.Label(frame, text = 'File OBJ:').grid(row=0, column=0)
+                self.filename_open = tk.StringVar()
+                tk.Entry(frame, textvariable=self.filename_open).grid(row=0, column=1, sticky='ew')
+                tk.Button(frame, text='...', command=self.open_button).grid(row=0, column=2)
+
+                tk.Label(frame, text='File Samples:').grid(row=1, column=0)
+                self.filename_save = tk.StringVar()
+                tk.Entry(frame, textvariable=self.filename_save).grid(row=1, column=1, sticky='ew')
+                tk.Button(frame, text='...', command=self.save_button).grid(row=1, column=2)
+
+                tk.Label(frame, text = 'Sample Count:').grid(row=2, column=0)
+                self.point_count = tk.StringVar()
+                tk.Entry(frame, textvariable=self.point_count).grid(row=2, column=1, sticky='ew')
+
+                tk.Grid.rowconfigure(frame, 0, weight=1)
+                tk.Grid.rowconfigure(frame, 1, weight=1)
+                tk.Grid.rowconfigure(frame, 2, weight=1)
+                tk.Grid.columnconfigure(frame, 0, weight=0)
+                tk.Grid.columnconfigure(frame, 1, weight=1)
+                tk.Grid.columnconfigure(frame, 2, weight=0)
+
+                tk.Button(self.top, text = 'Generate samples', command=self.run_button).pack()
+
+def dialog():
+
+        Window()
+        tk.mainloop()
 
 if __name__ == "__main__":
 
         try:
-                if len(sys.argv) != 4:
-                        error("Usage: obj_file sample_file sample_count")
 
-                sample_obj_file(*sys.argv[1:])
+                if len(sys.argv) == 4:
+                        sample_obj_file(*sys.argv[1:])
+                else:
+                        #error("Usage: obj_file sample_file sample_count")
+                        dialog()
 
                 # test_triangle_samples(1000)
 
