@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Отображение точек семплеров графической программы.
@@ -14,7 +15,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import mpl_toolkits.mplot3d
 
 
 STRATIFIED_JITTERED_SAMPLER = "Stratified Jittered Sampler"
@@ -30,54 +31,55 @@ class ShowSamplesException(Exception):
 def error(message):
         raise ShowSamplesException(message)
 
-def draw_line(point_from, point_to):
+def draw_line(ax, point_from, point_to):
+
         assert len(point_from) == 2 and len(point_to) == 2
 
-        plt.plot([point_from[0], point_to[0]], [point_from[1], point_to[1]],
-                 color = 'gray', linestyle = 'solid', linewidth = 0.5)
+        ax.plot([point_from[0], point_to[0]], [point_from[1], point_to[1]],
+                color = 'gray', linestyle = 'solid', linewidth = 0.5)
 
-def show_points_2d(title, grid_size, points, window_title):
+def show_points_2d(ax, grid_size, points):
 
         assert len(points) > 0 and len(points[0]) == 2
 
         for x in range(0, grid_size + 1):
-                draw_line((x / grid_size, 0), (x / grid_size, 1))
+                draw_line(ax, (x / grid_size, 0), (x / grid_size, 1))
 
         for y in range(0, grid_size + 1):
-                draw_line((0, y / grid_size), (1, y / grid_size))
+                draw_line(ax, (0, y / grid_size), (1, y / grid_size))
 
-        plt.scatter(*zip(*points), color = 'green', s = 4)
+        ax.scatter(*zip(*points), color = 'green', s = 4)
 
-        plt.axes().set_aspect('equal')
-        plt.gcf().canvas.set_window_title(window_title)
-        plt.title(title)
-        plt.show()
-
-def show_points_3d(title, points, window_title):
+def show_points_3d(ax, points):
 
         assert len(points) > 0 and len(points[0]) == 3
 
-        #fig = plt.figure()
-        #ax = fig.add_subplot(111, projection='3d')
-        ax = Axes3D(plt.figure())
-
         ax.scatter(*zip(*points), c = 'green', marker = '.')
-
-        plt.gcf().canvas.set_window_title(window_title)
-        plt.title(title)
-        plt.show()
 
 def show_points(title, grid_size, points, window_title):
 
         if len(points) == 0:
                 error('No points to show')
 
-        if len(points[0]) == 2:
-                show_points_2d(title, grid_size, points, window_title)
-        elif len(points[0]) == 3:
-                show_points_3d(title, points, window_title)
-        else:
+        if len(points[0]) not in (2, 3):
                 error('Point dimension {0} is not supported'.format(len(points[0])))
+
+        fig = plt.figure()
+
+        if len(points[0]) == 2:
+                ax = fig.add_subplot(111)
+                show_points_2d(ax, grid_size, points)
+        elif len(points[0]) == 3:
+                ax = fig.add_subplot(111, projection='3d')
+                show_points_3d(ax, points)
+        else:
+                assert False
+
+        ax.set_aspect('equal')
+        ax.set_title(title)
+        fig.canvas.set_window_title(window_title)
+
+        plt.show()
 
 # Поиск типа семплера в строке "*Sampler name"
 def parse_sampler_type(text, samplers):
