@@ -10,6 +10,7 @@ import os
 import math
 import statistics
 import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import numpy as np
@@ -465,15 +466,30 @@ class Window():
 
                 tk.messagebox.showinfo("Information", "{0} samples generated".format(all_point_count))
 
+        @staticmethod
+        def set_style():
+
+                style = tk.ttk.Style()
+
+                if "xpnative" in style.theme_names():
+                        style.theme_use("xpnative")
+                elif "aqua" in style.theme_names():
+                        style.theme_use("aqua")
+                elif "clam" in style.theme_names():
+                        style.theme_use("clam")
+
         def __init__(self):
 
-                self.top = tk.Tk()
-                self.top.title("OBJ file samples")
+                root = tk.Tk()
 
-                self.top.resizable(width=True, height=False)
-                self.top.minsize(width=700, height=0)
+                self.set_style()
 
-                frame = tk.Frame(self.top, padx=5, pady=5)
+                root.title("OBJ file samples")
+                root.resizable(width=True, height=False)
+                root.minsize(width=700, height=0)
+
+                frame = tk.Frame(root, padx=5, pady=5)
+
                 frame.pack(fill=tk.BOTH, expand=tk.YES)
 
                 tk.Label(frame, text = 'File OBJ:').grid(row=0, column=0)
@@ -497,11 +513,12 @@ class Window():
                 tk.Grid.columnconfigure(frame, 1, weight=1)
                 tk.Grid.columnconfigure(frame, 2, weight=0)
 
-                tk.Button(self.top, text = 'Generate samples', command=self.run_button).pack()
+                tk.Button(root, text = 'Generate samples', command=self.run_button).pack()
 
 def dialog():
 
         Window()
+
         tk.mainloop()
 
 if __name__ == "__main__":
