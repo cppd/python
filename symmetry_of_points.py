@@ -36,11 +36,11 @@ import matplotlib.pyplot as plt
 if sys.version_info < (3, 6):
         sys.exit("Python >= 3.6 is required.")
 
-def annotate(x, y, count):
-        plt.annotate("{0} points".format(count), xy = (x, y), xytext = (15, 15),
-                     textcoords = 'offset points', ha = 'left', va = 'center',
-                     bbox = dict(boxstyle = 'round', alpha = 0.2),
-                     arrowprops = dict(arrowstyle = '->'))
+def annotate(ax, x, y, count):
+        ax.annotate("{0} points".format(count), xy = (x, y), xytext = (15, 15),
+                    textcoords = 'offset points', ha = 'left', va = 'center',
+                    bbox = dict(boxstyle = 'round', alpha = 0.2),
+                    arrowprops = dict(arrowstyle = '->'))
 
 # points — это как бы std::vector<std::array<int, 2>>
 def show_points(points, window_title, title):
@@ -54,6 +54,7 @@ def show_points(points, window_title, title):
         min_y = max_y = points[0][1]
 
         for x, y in points:
+
                 min_x = min(x, min_x)
                 max_x = max(x, max_x)
                 min_y = min(y, min_y)
@@ -71,14 +72,18 @@ def show_points(points, window_title, title):
                 increase_y = 0.1 * (max_x - min_x)
                 # Если тут increase_y == 0, то тогда пусть будет 0
 
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+
         for key, count in count_xy.items():
                 if count > 1:
-                        annotate(key[0], key[1], count)
+                        annotate(ax, key[0], key[1], count)
+        ax.scatter(*zip(*points))
+        ax.plot([mean_x, mean_x], [min_y - increase_y, max_y + increase_y])
 
-        plt.gcf().canvas.set_window_title(window_title)
-        plt.title(title)
-        plt.scatter(*zip(*points))
-        plt.plot([mean_x, mean_x], [min_y - increase_y, max_y + increase_y])
+        ax.set_title(title)
+        fig.canvas.set_window_title(window_title)
+
         plt.show()
 
 # Простой вариант без оптимизаций.
