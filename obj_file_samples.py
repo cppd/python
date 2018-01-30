@@ -26,12 +26,12 @@ class ObjSamplesException(Exception):
 def error(message):
         raise ObjSamplesException(message)
 
-def draw_line(point_from, point_to):
-        plt.plot([point_from[0], point_to[0]], [point_from[1], point_to[1]],
-                 color = 'gray', linestyle = 'solid', linewidth = 0.5)
+def draw_line(ax, point_from, point_to):
+        ax.plot([point_from[0], point_to[0]], [point_from[1], point_to[1]],
+                color = 'gray', linestyle = 'solid', linewidth = 0.5)
 
-def draw_points(points):
-        plt.scatter(*zip(*points), color = 'green', s = 1)
+def draw_points(ax, points):
+        ax.scatter(*zip(*points), color = 'green', s = 1)
 
 def show_triangle_samples(window_title, title, vertices, samples):
 
@@ -42,15 +42,19 @@ def show_triangle_samples(window_title, title, vertices, samples):
 
         v0, v1, v2 = vertices
 
-        draw_line(v0, v1)
-        draw_line(v1, v2)
-        draw_line(v2, v0)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
 
-        draw_points(samples)
+        draw_line(ax, v0, v1)
+        draw_line(ax, v1, v2)
+        draw_line(ax, v2, v0)
 
-        plt.axes().set_aspect('equal')
-        plt.gcf().canvas.set_window_title(window_title)
-        plt.title(title)
+        draw_points(ax, samples)
+
+        ax.set_aspect('equal')
+        ax.set_title(title)
+        fig.canvas.set_window_title(window_title)
+
         plt.show()
 
 def random_barycentric(uniform_random):
